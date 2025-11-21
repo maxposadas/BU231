@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wrongful Dismissal Risk Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body {
+      margin: 0;
+      background: #f3f4f6;
+      color: #111827;
+    }
+    header {
+      background: #111827;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { margin: 0; font-size: 20px; }
+    header span { font-size: 12px; opacity: 0.85; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: calc(100vh - 56px);
+    }
+    nav {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 16px 12px;
+    }
+    nav h2 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0 0 12px 4px;
+      color: #9ca3af;
+    }
+    .nav-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+    .nav-item.active {
+      background: #374151;
+      color: #f9fafb;
+      font-weight: 600;
+    }
+
+    main {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .page { display: none; }
+    .page.active-page { display: block; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.1);
+      margin-bottom: 16px;
+    }
+    .card h3 { margin-top: 0; margin-bottom: 8px; font-size: 16px; }
+    .card p { margin-top: 4px; font-size: 13px; color: #4b5563; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .pill-low { background: #ecfdf3; color: #166534; }
+    .pill-medium { background: #fffbeb; color: #92400e; }
+    .pill-high { background: #fef2f2; color: #b91c1c; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .checkbox-group input { margin-right: 6px; }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 9px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #111827;
+      color: white;
+    }
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    ul { padding-left: 18px; margin: 6px 0; }
+    ul li { margin-bottom: 4px; font-size: 13px; }
+
+    .upload-note {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 10px;
+      margin-bottom: 8px;
+    }
+
+    .small-text {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .wizard-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      gap: 8px;
+    }
+
+    .wizard-buttons-right {
+      margin-left: auto;
+      display: flex;
+      gap: 8px;
+    }
+
+    .progress-container {
+      position: sticky;
+      bottom: 0;
+      background: #f3f4f6;
+      padding: 8px 4px 0;
+      margin-top: 8px;
+    }
+    .progress-label {
+      font-size: 12px;
+      color: #4b5563;
+      margin-bottom: 4px;
+      text-align: right;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    #progressFill {
+      height: 100%;
+      width: 25%;
+      background: #111827;
+      transition: width 0.25s ease;
+    }
+
+    /* Loading screen */
+    #loadingScreen {
+      display: none;
+      min-height: 200px;
+      display: none;
+    }
+    .loading-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px;
+      text-align: center;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      border: 4px solid #e5e7eb;
+      border-top-color: #111827;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+      nav {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Wrongful Dismissal Risk Dashboard</h1>
+      <span>Definitely-Not-Evil-Corp Inc. · Employment Law Compliance Tool</span>
+    </div>
+    <div style="font-size:12px;opacity:0.8;">MVP – Prototype Only</div>
+  </header>
+
+  <div class="app">
+    <nav>
+      <h2>Navigation</h2>
+      <div class="nav-item active" data-target="dashboardPage">Dashboard</div>
+      <div class="nav-item" data-target="employeesPage">Employee Records</div>
+      <div class="nav-item" data-target="assessmentPage">New Termination Assessment</div>
+    </nav>
+
+    <main>
+      <!-- DASHBOARD PAGE -->
+      <div id="dashboardPage" class="page active-page">
+        <div class="card">
+          <h3>Welcome to the Wrongful Dismissal Compliance Tool</h3>
+          <p>
+            This dashboard helps Definitely-Not-Evil-Corp Inc. evaluate the legal risk of terminating an employee
+            under Canadian Employment Law. Use the menu on the left to:
+          </p>
+          <ul>
+            <li>Create or update <strong>Employee Records</strong> (profile + evidence).</li>
+            <li>Run a <strong>New Termination Assessment</strong> by selecting an employee.</li>
+          </ul>
+
+          <hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb;" />
+
+          <h4 style="margin:0 0 6px;font-size:14px;">How to Use This Prototype (Marker Tutorial)</h4>
+          <ol class="small-text" style="margin-top:4px;padding-left:18px;">
+            <li><strong>Step 1 – Create an employee record:</strong> Click “Employee Records” and fill in the employee profile.</li>
+            <li><strong>Step 2 – Add evidence:</strong> Upload conceptual evidence files (not stored in MVP).</li>
+            <li><strong>Step 3 – Save the employee:</strong> Click “Save Employee Record.”</li>
+            <li><strong>Step 4 – Start an assessment:</strong> Go to “New Termination Assessment” and complete Steps 1–4.</li>
+            <li><strong>Step 5 – Run the AI-style risk check:</strong> Click “Run Risk Assessment.” Loading screen → Results page.</li>
+            <li><strong>Step 6 – Restart if needed:</strong> Use “Run New Assessment” on results page.</li>
+          </ol>
+
+          <p class="small-text" style="margin-top:6px;">
+            Note: All data is stored only in browser memory for this prototype and clears on refresh.
+          </p>
+        </div>
+      </div>
+
+      <!-- EMPLOYEE RECORDS PAGE (Profile + Evidence all in one card) -->
+      <div id="employeesPage" class="page">
+        <div class="card">
+          <h3>Employee Profile &amp; Evidence</h3>
+          <p class="small-text">
+            For each employee, fill out their basic Bardal-style information and upload evidence. The assessment later
+            pulls from this profile. (MVP: stored in browser memory only, uploads are for visual demo.)
+          </p>
+
+          <!-- Profile Fields -->
+          <div class="field-row">
+            <div>
+              <label for="emp_name">Employee Name</label>
+              <input id="emp_name" type="text" placeholder="Jane Doe" />
+            </div>
+            <div>
+              <label for="emp_role">Job Level</label>
+              <select id="emp_role">
+                <option value="junior">Junior / Non-Managerial</option>
+                <option value="mid">Mid-Level Professional</option>
+                <option value="senior">Senior / Managerial</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div>
+              <label for="emp_age">Age</label>
+              <input id="emp_age" type="number" min="16" max="80" placeholder="e.g. 45" />
+            </div>
+            <div>
+              <label for="emp_years">Years of Service</label>
+              <input id="emp_years" type="number" min="0" max="50" placeholder="e.g. 7" />
+            </div>
+          </div>
+
+          <label for="emp_similar_jobs">Are similar jobs easy to find for this role?</label>
+          <select id="emp_similar_jobs">
+            <option value="easy">Yes – relatively easy</option>
+            <option value="moderate">Somewhat</option>
+            <option value="hard">No – difficult</option>
+          </select>
+
+          <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;" />
+
+          <!-- Evidence Uploads (visually part of profile) -->
+          <p class="small-text" style="margin-bottom:8px;">
+            Evidence uploaded here is associated with this employee’s profile (MVP: conceptual link only).
+          </p>
+
+          <label for="ev_trained">Evidence that employee was trained</label>
+          <input id="ev_trained" type="file" multiple />
+
+          <label for="ev_warnings">Warnings to the employee</label>
+          <input id="ev_warnings" type="file" multiple />
+
+          <label for="ev_manager_notes">Manager notes on specific incidents of poor performance</label>
+          <input id="ev_manager_notes" type="file" multiple />
+
+          <label for="ev_comm_feedback">Evidence of communication &amp; feedback</label>
+          <input id="ev_comm_feedback" type="file" multiple />
+
+          <label for="ev_support_coaching">Records of offers for additional support or coaching</label>
+          <input id="ev_support_coaching" type="file" multiple />
+
+          <label for="ev_accommodation">Records of accommodation requests</label>
+          <input id="ev_accommodation" type="file" multiple />
+
+          <p class="upload-note">
+            In a full build, each upload would be stored and searchable by employee, with previews of PDFs/emails and links into the HRIS.
+          </p>
+
+          <!-- Save + Saved Employees (bottom of card) -->
+          <button class="btn-primary" onclick="saveEmployee()">Save Employee Record</button>
+          <p class="small-text" id="saveStatus" style="margin-top:6px;"></p>
+
+          <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;" />
+
+          <h4 style="margin:0 0 6px;font-size:14px;">Saved Employees (this session)</h4>
+          <ul id="employeeList" class="small-text" style="margin-top:4px;">
+            <li>No employees saved yet. Add one above.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ASSESSMENT PAGE -->
+      <div id="assessmentPage" class="page">
+        <!-- Wizard (steps + progress) -->
+        <div id="wizardWrapper">
+          <!-- Step 1 -->
+          <div class="card wizard-step" id="step1">
+            <h3>1. Choose Employee</h3>
+            <p class="small-text">
+              Start by selecting an employee whose profile has been created under <strong>Employee Records</strong>.
+              The assessment will use their age, years of service, job level, and job market difficulty.
+            </p>
+
+            <label for="employee_select">Employee</label>
+            <select id="employee_select">
+              <option value="">-- No employees saved yet --</option>
+            </select>
+
+            <p id="selectedEmployeeSummary" class="small-text" style="margin-top:6px;"></p>
+
+            <div class="wizard-buttons">
+              <span></span>
+              <div class="wizard-buttons-right">
+                <button class="btn-primary" onclick="goToStep(2)">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="card wizard-step" id="step2" style="display:none;">
+            <h3>2. Type of Dismissal</h3>
+            <p>Select the primary path. Each path has different legal tests.</p>
+            <label for="dismissal_type">Dismissal Type</label>
+            <select id="dismissal_type">
+              <option value="without_cause">Without Cause (Notice / Pay in Lieu)</option>
+              <option value="with_cause">With Cause (Misconduct / Incompetence)</option>
+            </select>
+
+            <label for="reason">Main Reason</label>
+            <select id="reason">
+              <option value="restructuring">Restructuring / Redundancy</option>
+              <option value="misconduct">Misconduct / Policy Breach</option>
+              <option value="incompetence">Incompetence / Poor Performance</option>
+              <option value="insubordination">Insubordination</option>
+              <option value="other">Other</option>
+            </select>
+
+            <label for="esa_notice">Weeks of Notice / Pay in Lieu Offered (ESA/Common Law)</label>
+            <input id="esa_notice" type="number" min="0" max="104" placeholder="e.g. 4" />
+
+            <div class="wizard-buttons">
+              <button class="btn-secondary" onclick="goToStep(1)">Back</button>
+              <div class="wizard-buttons-right">
+                <button class="btn-primary" onclick="goToStep(3)">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="card wizard-step" id="step3" style="display:none;">
+            <h3>3. Progressive Discipline &amp; Documentation</h3>
+            <p>Courts expect warnings, training, and documentation before dismissal for performance issues.</p>
+
+            <label for="pip">Formal PIP (Performance Improvement Plan)?</label>
+            <select id="pip">
+              <option value="none">No PIP</option>
+              <option value="incomplete">Started but not completed</option>
+              <option value="completed">Completed PIP</option>
+            </select>
+
+            <label for="condonation">Has the employer tolerated the behaviour over time (condonation)?</label>
+            <select id="condonation">
+              <option value="no">No – issues addressed promptly</option>
+              <option value="maybe">Somewhat – mixed history</option>
+              <option value="yes">Yes – behaviour tolerated</option>
+            </select>
+
+            <hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb;" />
+            <p class="small-text" style="margin-bottom:4px;">
+              For this termination, is there evidence in the employee profile for:
+            </p>
+
+            <label>Evidence that employee was trained</label>
+            <div class="checkbox-group">
+              <input id="ev_present_trained" type="checkbox" />
+              <label for="ev_present_trained" style="margin:0;font-weight:400;">Present in employee profile</label>
+            </div>
+
+            <label>Warnings to the employee</label>
+            <div class="checkbox-group">
+              <input id="ev_present_warnings" type="checkbox" />
+              <label for="ev_present_warnings" style="margin:0;font-weight:400;">Present in employee profile</label>
+            </div>
+
+            <label>Manager notes on specific incidents of poor performance</label>
+            <div class="checkbox-group">
+              <input id="ev_present_manager_notes" type="checkbox" />
+              <label for="ev_present_manager_notes" style="margin:0;font-weight:400;">Present in employee profile</label>
+            </div>
+
+            <label>Evidence of communication &amp; feedback</label>
+            <div class="checkbox-group">
+              <input id="ev_present_comm" type="checkbox" />
+              <label for="ev_present_comm" style="margin:0;font-weight:400;">Present in employee profile</label>
+            </div>
+
+            <label>Records of offers for additional support or coaching</label>
+            <div class="checkbox-group">
+              <input id="ev_present_support" type="checkbox" />
+              <label for="ev_present_support" style="margin:0;font-weight:400;">Present in employee profile</label>
+            </div>
+
+            <label>Records of accommodation requests</label>
+            <div class="checkbox-group">
+              <input id="ev_present_accommodation" type="checkbox" />
+              <label for="ev_present_accommodation" style="margin:0;font-weight:400;">Present in employee profile</label>
+            </div>
+
+            <div class="wizard-buttons">
+              <button class="btn-secondary" onclick="goToStep(2)">Back</button>
+              <div class="wizard-buttons-right">
+                <button class="btn-primary" onclick="goToStep(4)">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="card wizard-step" id="step4" style="display:none;">
+            <h3>4. Constructive Dismissal Risk Factors</h3>
+            <p>Flag situations where the employee might claim constructive dismissal.</p>
+
+            <div class="checkbox-group">
+              <input id="pay_cut" type="checkbox" />
+              <label for="pay_cut" style="margin:0;font-weight:400;">Significant reduction in compensation</label>
+            </div>
+            <div class="checkbox-group">
+              <input id="duty_change" type="checkbox" />
+              <label for="duty_change" style="margin:0;font-weight:400;">Major change in duties / demotion</label>
+            </div>
+            <div class="checkbox-group">
+              <input id="location_change" type="checkbox" />
+              <label for="location_change" style="margin:0;font-weight:400;">Change in location</label>
+            </div>
+            <div class="checkbox-group">
+              <input id="layoff" type="checkbox" />
+              <label for="layoff" style="margin:0;font-weight:400;">Temporary layoff / indefinite suspension</label>
+            </div>
+            <div class="checkbox-group">
+              <input id="poisoned" type="checkbox" />
+              <label for="poisoned" style="margin:0;font-weight:400;">Poisoned work environment concerns</label>
+            </div>
+
+            <hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb;" />
+
+            <p class="small-text">
+              Ready to assess risk using our AI model trained on patterns from thousands of dismissal cases?
+            </p>
+
+            <div class="wizard-buttons">
+              <button class="btn-secondary" onclick="goToStep(3)">Back</button>
+              <div class="wizard-buttons-right">
+                <button class="btn-primary" onclick="startAssessment()">Run Risk Assessment</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress bar at bottom of wizard -->
+          <div class="progress-container">
+            <div id="progressLabel" class="progress-label">Step 1 of 4</div>
+            <div class="progress-bar">
+              <div id="progressFill"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading Screen -->
+        <div id="loadingScreen">
+          <div class="card">
+            <div class="loading-inner">
+              <div class="spinner"></div>
+              <p class="small-text" style="margin-bottom:4px;">
+                AI model searching through thousands of cases…
+              </p>
+              <p class="small-text">
+                Generating a wrongful dismissal risk assessment based on the information you’ve provided.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results Page -->
+        <div id="resultsPage" style="display:none;">
+          <div class="card" id="riskCard">
+            <h3>Risk Level</h3>
+            <p>The current assessment of this termination scenario.</p>
+            <div id="riskBadge" style="margin-top:8px;"></div>
+            <div id="riskSummary" style="margin-top:6px;font-size:13px;color:#374151;"></div>
+          </div>
+
+          <div class="card">
+            <h3>Key Issues Identified</h3>
+            <p>These items help explain why the risk level is high, medium, or low.</p>
+            <ul id="issuesList">
+              <li>Run an assessment to populate issues.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>Recommended Next Steps</h3>
+            <p>Practical actions to reduce legal risk before termination.</p>
+            <ul id="actionsList">
+              <li>Run an assessment to generate tailored recommendations.</li>
+            </ul>
+          </div>
+
+          <div class="card" style="display:flex;justify-content:flex-end;">
+            <button class="btn-secondary" onclick="runNewAssessment()">Run New Assessment</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // In-memory store of employees for this session
+    const employees = [];
+    let currentStep = 1;
+
+    function refreshEmployeeSelect() {
+      const select = document.getElementById("employee_select");
+      const list = document.getElementById("employeeList");
+
+      // Update dropdown
+      select.innerHTML = "";
+      if (employees.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "-- No employees saved yet --";
+        select.appendChild(opt);
+
+        list.innerHTML = "<li>No employees saved yet. Add one above.</li>";
+        document.getElementById("selectedEmployeeSummary").textContent = "";
+        return;
+      }
+
+      employees.forEach((emp) => {
+        const opt = document.createElement("option");
+        opt.value = emp.id;
+        opt.textContent = emp.name;
+        select.appendChild(opt);
+      });
+
+      // Update simple list view
+      list.innerHTML = "";
+      employees.forEach((emp) => {
+        const li = document.createElement("li");
+        li.textContent =
+          emp.name +
+          " – " +
+          emp.roleLabel +
+          ", " +
+          emp.years +
+          " year(s) of service, age " +
+          emp.age;
+        list.appendChild(li);
+      });
+
+      updateSelectedEmployeeSummary();
+    }
+
+    function saveEmployee() {
+      const name = document.getElementById("emp_name").value.trim();
+      const role = document.getElementById("emp_role").value;
+      const age = Number(document.getElementById("emp_age").value) || 0;
+      const years = Number(document.getElementById("emp_years").value) || 0;
+      const similarJobs = document.getElementById("emp_similar_jobs").value;
+      const status = document.getElementById("saveStatus");
+
+      if (!name) {
+        status.textContent = "Please enter an employee name before saving.";
+        status.style.color = "#b91c1c";
+        return;
+      }
+
+      const roleLabelMap = {
+        junior: "Junior / Non-Managerial",
+        mid: "Mid-Level Professional",
+        senior: "Senior / Managerial",
+      };
+
+      const existing = employees.find((e) => e.name.toLowerCase() === name.toLowerCase());
+      if (existing) {
+        existing.role = role;
+        existing.roleLabel = roleLabelMap[role] || role;
+        existing.age = age;
+        existing.years = years;
+        existing.similarJobs = similarJobs;
+        status.textContent = "Employee record updated.";
+      } else {
+        employees.push({
+          id: String(Date.now()) + String(Math.random()),
+          name,
+          role,
+          roleLabel: roleLabelMap[role] || role,
+          age,
+          years,
+          similarJobs,
+        });
+        status.textContent = "Employee record saved.";
+      }
+      status.style.color = "#166534";
+
+      refreshEmployeeSelect();
+    }
+
+    function updateSelectedEmployeeSummary() {
+      const select = document.getElementById("employee_select");
+      const summary = document.getElementById("selectedEmployeeSummary");
+      const id = select.value;
+      const emp = employees.find((e) => e.id === id);
+
+      if (!emp) {
+        summary.textContent = "";
+        return;
+      }
+
+      const jobText =
+        emp.roleLabel +
+        ", " +
+        emp.years +
+        " year(s) of service, age " +
+        emp.age +
+        ", job market: " +
+        (emp.similarJobs === "easy"
+          ? "relatively easy"
+          : emp.similarJobs === "moderate"
+          ? "moderate"
+          : "difficult");
+
+      summary.textContent = "Selected employee: " + emp.name + " (" + jobText + ").";
+    }
+
+    // Wizard navigation
+    function setStep(step) {
+      currentStep = step;
+      const steps = [1, 2, 3, 4];
+      steps.forEach((s) => {
+        const el = document.getElementById("step" + s);
+        if (el) el.style.display = s === step ? "block" : "none";
+      });
+
+      const progressLabel = document.getElementById("progressLabel");
+      const progressFill = document.getElementById("progressFill");
+      progressLabel.textContent = "Step " + step + " of 4";
+      const percent = (step / 4) * 100;
+      progressFill.style.width = percent + "%";
+    }
+
+    function goToStep(step) {
+      setStep(step);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function runNewAssessment() {
+      // Reset to wizard view, step 1
+      document.getElementById("wizardWrapper").style.display = "block";
+      document.getElementById("loadingScreen").style.display = "none";
+      document.getElementById("resultsPage").style.display = "none";
+      setStep(1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // Simple tab navigation
+    document.addEventListener("DOMContentLoaded", function () {
+      const pages = document.querySelectorAll(".page");
+      const navItems = document.querySelectorAll("nav .nav-item");
+
+      function showPage(targetId) {
+        pages.forEach((p) => p.classList.toggle("active-page", p.id === targetId));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (targetId === "assessmentPage") {
+          updateSelectedEmployeeSummary();
+          setStep(currentStep || 1);
+          document.getElementById("wizardWrapper").style.display = "block";
+          document.getElementById("loadingScreen").style.display = "none";
+          document.getElementById("resultsPage").style.display = "none";
+        }
+      }
+
+      navItems.forEach((item) => {
+        item.addEventListener("click", () => {
+          navItems.forEach((i) => i.classList.remove("active"));
+          item.classList.add("active");
+          const target = item.getAttribute("data-target");
+          if (target) showPage(target);
+        });
+      });
+
+      const empSelect = document.getElementById("employee_select");
+      empSelect.addEventListener("change", updateSelectedEmployeeSummary);
+
+      // Initial state
+      refreshEmployeeSelect();
+      setStep(1);
+    });
+
+    function startAssessment() {
+      const empSelect = document.getElementById("employee_select");
+      const empId = empSelect.value;
+      const emp = employees.find((e) => e.id === empId);
+      if (!emp) {
+        alert("Please choose an employee (and create one under Employee Records if needed).");
+        return;
+      }
+
+      // Hide wizard + show loading screen
+      document.getElementById("wizardWrapper").style.display = "none";
+      document.getElementById("resultsPage").style.display = "none";
+      document.getElementById("loadingScreen").style.display = "block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      setTimeout(() => {
+        assessRisk(); // fills the risk cards
+        document.getElementById("loadingScreen").style.display = "none";
+        document.getElementById("resultsPage").style.display = "block";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 2000);
+    }
+
+    // Risk assessment uses selected employee profile
+    function assessRisk() {
+      const empSelect = document.getElementById("employee_select");
+      const empId = empSelect.value;
+      const emp = employees.find((e) => e.id === empId);
+
+      if (!emp) {
+        alert("Please choose an employee (and create one under Employee Records if needed).");
+        return;
+      }
+
+      const age = emp.age || 0;
+      const years = emp.years || 0;
+      const role = emp.role || "junior";
+      const similarJobs = emp.similarJobs || "moderate";
+
+      const dismissalType = document.getElementById("dismissal_type").value;
+      const reason = document.getElementById("reason").value;
+      const esaNotice = Number(document.getElementById("esa_notice").value) || 0;
+      const pip = document.getElementById("pip").value;
+      const condonation = document.getElementById("condonation").value;
+
+      // Evidence presence checkboxes
+      const evTrained = document.getElementById("ev_present_trained").checked;
+      const evWarnings = document.getElementById("ev_present_warnings").checked;
+      const evManagerNotes = document.getElementById("ev_present_manager_notes").checked;
+      const evComm = document.getElementById("ev_present_comm").checked;
+      const evSupport = document.getElementById("ev_present_support").checked;
+      const evAccommodation = document.getElementById("ev_present_accommodation").checked;
+
+      const payCut = document.getElementById("pay_cut").checked;
+      const dutyChange = document.getElementById("duty_change").checked;
+      const locationChange = document.getElementById("location_change").checked;
+      const layoff = document.getElementById("layoff").checked;
+      const poisoned = document.getElementById("poisoned").checked;
+
+      let score = 0;
+      const issues = [];
+      const actions = [];
+
+      // Notice vs years of service (super-simplified Bardal-style heuristic)
+      const expectedNotice = Math.min(Math.max(years, 1), 8);
+      if (esaNotice < expectedNotice) {
+        score += 25;
+        issues.push("ESA/common law style notice appears low relative to years of service.");
+        actions.push("Increase notice period or payment in lieu to better match years of service.");
+      }
+
+      if (age >= 50) {
+        score += 10;
+        issues.push("Employee is older (50+), which typically increases reasonable notice expectations.");
+      }
+      if (years >= 10) {
+        score += 10;
+        issues.push("Employee has long service (10+ years), increasing risk if notice is short.");
+      }
+      if (role === "senior") {
+        score += 8;
+        issues.push("Senior / managerial position increases exposure if notice is inadequate.");
+      }
+      if (similarJobs === "hard") {
+        score += 8;
+        issues.push("Similar employment is difficult to obtain, increasing risk of higher notice being required.");
+      }
+
+      if (dismissalType === "with_cause") {
+        // Warnings evidence
+        if (!evWarnings) {
+          score += 25;
+          issues.push("No clear evidence of written warnings before dismissal for cause.");
+          actions.push("Ensure written warnings are given and documented before terminating for cause.");
+        } else {
+          score += 10;
+          issues.push("Some warning evidence exists, but courts may review whether warnings and chances to improve were sufficient.");
+        }
+
+        // Training evidence
+        if (!evTrained) {
+          score += 10;
+          issues.push("No documented evidence that the employee was trained or coached for the performance issues.");
+          actions.push("Provide and document training/coaching to support the employee before dismissal.");
+        }
+
+        // Documentation of incidents / feedback
+        if (!evManagerNotes && !evComm) {
+          score += 15;
+          issues.push("Performance or misconduct issues are not clearly documented (incident notes / feedback).");
+          actions.push("Document incidents and feedback in writing (emails, notes, reviews) before dismissal.");
+        }
+
+        // Condonation
+        if (condonation === "yes") {
+          score += 20;
+          issues.push("Employer appears to have condoned the behaviour over time, undermining cause.");
+          actions.push("Seek legal advice before relying on cause where behaviour has been tolerated.");
+        } else if (condonation === "maybe") {
+          score += 8;
+          issues.push("Mixed history may suggest some level of condonation of the behaviour.");
+        }
+
+        // PIP not completed is a softer flag
+        if (pip === "none") {
+          score += 5;
+          issues.push("No formal Performance Improvement Plan (PIP) was used before dismissal for cause.");
+        } else if (pip === "incomplete") {
+          score += 3;
+          issues.push("PIP was started but not completed, which may weaken a cause argument.");
+        }
+      } else {
+        // Without cause but performance / behaviour based reason and no warnings evidence
+        if (!evWarnings && (reason === "incompetence" || reason === "misconduct" || reason === "insubordination")) {
+          score += 8;
+          issues.push("No warning evidence even though the dismissal reason relates to behaviour or performance.");
+          actions.push("Consider warnings and performance discussions before termination, even without cause.");
+        }
+      }
+
+      // Accommodation / support evidence
+      if (!evSupport && !evAccommodation) {
+        issues.push("Little or no evidence of support, coaching, or accommodation efforts is recorded.");
+        actions.push("Ensure support and accommodation efforts (where applicable) are documented before termination.");
+      }
+
+      // Constructive dismissal factors
+      const constructiveFlags = [payCut, dutyChange, locationChange, layoff, poisoned].filter(Boolean).length;
+      if (constructiveFlags >= 2) {
+        score += 20;
+        issues.push("Multiple constructive dismissal indicators are present (pay, duties, location, layoff, or environment).");
+        actions.push("Review role changes and working conditions to avoid constructive dismissal claims.");
+      } else if (constructiveFlags === 1) {
+        score += 8;
+        issues.push("At least one constructive dismissal indicator is present.");
+      }
+
+      if (issues.length === 0) {
+        issues.push("No major legal red flags identified based on the inputs provided.");
+      }
+      if (actions.length === 0) {
+        actions.push("Confirm compliance with ESA minimums and consider seeking legal advice for edge cases.");
+      }
+
+      let level = "Low";
+      let pillClass = "pill-low";
+      let summary =
+        "Based on the current inputs, the risk of a wrongful dismissal claim appears relatively low, assuming the information is accurate and complete.";
+
+      if (score >= 30 && score < 60) {
+        level = "Medium";
+        pillClass = "pill-medium";
+        summary =
+          "There are several compliance concerns that increase the risk of a wrongful dismissal claim. Addressing the issues below could reduce exposure.";
+      } else if (score >= 60) {
+        level = "High";
+        pillClass = "pill-high";
+        summary =
+          "There are significant compliance gaps that make a wrongful dismissal claim likely or more difficult to defend.";
+      }
+
+      const riskBadge = document.getElementById("riskBadge");
+      const riskSummary = document.getElementById("riskSummary");
+      riskBadge.innerHTML = `<span class="pill ${pillClass}">Risk Level: ${level}</span>`;
+      riskSummary.textContent =
+        summary +
+        " (Internal risk score: " +
+        score +
+        "/100, not shown to end-users in production. Employee: " +
+        emp.name +
+        ".)";
+
+      const issuesList = document.getElementById("issuesList");
+      issuesList.innerHTML = "";
+      issues.forEach((issue) => {
+        const li = document.createElement("li");
+        li.textContent = issue;
+        issuesList.appendChild(li);
+      });
+
+      const actionsList = document.getElementById("actionsList");
+      actionsList.innerHTML = "";
+      actions.forEach((act) => {
+        const li = document.createElement("li");
+        li.textContent = act;
+        actionsList.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
